@@ -1,0 +1,8 @@
+End-to-end test on a real OKMS (EU, eu-west-gra) with an OAuth2 service account, controller run out of cluster against a local OrbStack k8s.
+
+Findings:
+- Token endpoint answers invalid_scope without scope=all. Verified with curl: no scope -> {"error":"invalid_scope"}, scope=all -> Bearer, expires_in 3599.
+- IAM actions for okms are split across resource types okms (secret/create) and okms/secret (get, version/getData, version/create, delete). There is no secret/list action: ListSecretV2 is filtered by what secret/get grants. Listed from GET /v2/iam/reference/action?resourceType=okms%2Fsecret.
+- Secret URN is urn:v1:eu:resource:okms:<id>/secret/<path url-escaped>. Paths have no leading slash: a ResourceName 'starts with /test' condition matches nothing and yields 403 on the real path, 404 on the slash-prefixed one.
+- tokenURL guard verified live: foreign host and http:// rejected before any exchange; ca.ovh.com reached and answered invalid_client for an EU account.
+- make test must run with the default PROVIDER=all_providers: PROVIDER=ovh drops the fake provider the envtest controller suites depend on.
